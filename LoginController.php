@@ -11,6 +11,11 @@ class Login extends BaseController
         return view('login');
     }
 
+    public function logout() {
+        session()->destroy();
+        return redirect()->route('login');
+    }
+
     public function submit() {
         helper(['form']);
 
@@ -54,6 +59,40 @@ class Login extends BaseController
                 'loginError' => 'Email atau password salah.'
             ]);
         }
+    }
+
+    public function register() {
+        helper(['form']);
+
+        $userModel = new UsersModel();
+
+        $data = [
+            'email'    => $this->request->getPost('email'),
+            'password' => $this->request->getPost('password'),
+            'pass_confirm' => $this->request->getPost('pass_confirm')
+        ];
+
+        // Aturan validasi
+        $rules = [
+            'email'        => 'required|valid_email|is_unique[users.email]',
+            'password'     => 'required|min_length[6]',
+            'pass_confirm' => 'required|matches[password]'
+        ];
+
+        if (! $this->validate($rules)) {
+            return view('/register', [
+                'validation' => $this->validator
+            ]);
+        }
+
+        // Simpan user ke database (tanpa hash, sesuai struktur login-mu)
+        $userModel->save([
+            'email'    => $data['email'],
+            'password' => $data['password'] // Pastikan nanti pakai hash di real case!
+        ]);
+
+        // Setelah berhasil register, redirect ke login
+        return redirect()->to('/login')->with('success', 'Registrasi berhasil! Silakan login.');
     }
    
 }
